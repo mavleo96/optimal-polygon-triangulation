@@ -31,6 +31,7 @@ def visualize_polygon(
     ears: list[int] | None = None,
     diagonals: list[Diagonal] | None = None,
     title: str | None = None,
+    **kwargs,
 ) -> None:
     """
     Visualizes a polygon with optional ear highlighting and diagonal overlay.
@@ -41,10 +42,10 @@ def visualize_polygon(
         diagonals: List of Diagonal pairs to draw as diagonals.
         title:     Optional plot title.
     """
-    figsize = (8, 8)
-    fontsize = 7
-    linewidth = 1.2
-    vertex_size = 20
+    figsize = kwargs.get("figsize", (8, 8))
+    fontsize = kwargs.get("fontsize", 7)
+    linewidth = kwargs.get("linewidth", 1.2)
+    vertex_size = kwargs.get("vertex_size", 20)
 
     n = len(polygon)
     xs = [v.p.x for v in polygon.vertices]

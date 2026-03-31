@@ -7,9 +7,6 @@ Generates three categories of simple polygons:
     - star_shaped_polygon:   star-shaped polygon (angle-sort with random radii)
     - convex_polygon:        convex polygon (Valtr's algorithm via stackoverflow.com/a/47358689)
 
-All polygons from polygenerator are counterclockwise and fit to [0,1]x[0,1].
-This script reverses them to clockwise order as required by the algorithm.
-
 Notes:
     - Author of polygenerator notes that it the library does not scale well beyond ~100 points
       for random_polygon (O(n^2) 2-opt heuristic); use --max-points <= 100 for reliable generation.
@@ -31,12 +28,13 @@ Example Usage:
         --min-points 5 \
         --max-points 100 \
         --n-per-size 5 \
-        --output-dir testing_suite \
-        --seed 0
+        --output-dir testing_suite
 """
 
 import argparse
+import os
 import random
+import sys
 from pathlib import Path
 
 from polygenerator import (
@@ -44,6 +42,11 @@ from polygenerator import (
     random_polygon,
     random_star_shaped_polygon,
 )
+
+sys.path.insert(0, os.getcwd())
+
+from src.models import Point
+from src.utils import validate_polygon_input
 
 RANDOM_SEED = 0
 STEP_SIZE = 5
@@ -89,9 +92,17 @@ def main():
     for num_points in range(args.min_points, args.max_points + 1, STEP_SIZE):
         for i in range(args.n_per_size):
             for type_name, generator in polygon_types.items():
-                # Note: polygenerator generates counterclockwise polygons, so we
-                # reverse them to clockwise order
-                polygon = generator(num_points=num_points)[::-1]
+                while True:
+                    # Note: 1. polygenerator generates counterclockwise polygons, so we
+                    #          reverse them to clockwise order
+                    #       2. polygenerator may generate polygons that are not simple, so we
+                    #          validate and regenerate if necessary
+                    polygon = generator(num_points=num_points)[::-1]
+                    try:
+                        validate_polygon_input([Point(x=x, y=y) for x, y in polygon])
+                        break
+                    except Exception:
+                        continue
 
                 with open(
                     args.output_dir / type_name / f"polygon_{num_points}_{i:04d}.txt", "w"
