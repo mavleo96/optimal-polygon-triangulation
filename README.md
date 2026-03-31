@@ -12,3 +12,11 @@ obtained using ear clipping (algorithm Triangulate, from O’Rourke).
 ```bash
 python -m src.ear_clipping --input_file sample_input.txt --output_file out.txt
 ```
+
+```bash
+python scripts/generate_testing_suite.py \
+    --min-points 5 \
+    --max-points 100 \
+    --n-per-size 5 \
+    --output-dir testing_suite
+```
