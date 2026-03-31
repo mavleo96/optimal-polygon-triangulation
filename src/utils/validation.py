@@ -10,6 +10,7 @@ def validate_input(points: list[Point]) -> None:
     - A. vertex count check: n >= 3
     - B. no duplicate points
     - C. no self-intersections
+    - D. clockwise check
 
     Args:
         points: List of points.
@@ -30,6 +31,24 @@ def validate_input(points: list[Point]) -> None:
     # Note: pinch point case is handled by ensuring no duplicate points at check B.
     if not _check_self_intersections(points):
         raise ValueError("Polygon has self-intersections")
+
+    # D. clockwise check
+    if not _check_clockwise(points):
+        raise ValueError("Polygon is not clockwise")
+
+
+def _check_clockwise(points: list[Point]) -> bool:
+    """
+    Checks if the polygon defined by points is clockwise.
+    Uses shoelace formula — signed area is negative for CW in y-up coordinates.
+    O(n) area check.
+    """
+    n = len(points)
+    area = 0
+    for i in range(n):
+        j = (i + 1) % n
+        area += points[i].x * points[j].y - points[i].y * points[j].x
+    return area < 0
 
 
 def _check_self_intersections(points: list[Point]) -> bool:
