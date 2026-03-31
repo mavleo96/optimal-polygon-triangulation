@@ -1,5 +1,5 @@
 from ..constants import TOL
-from ..models import Point
+from ..models import Point, PolygonVertex
 
 
 def orientation_check(p: Point, q: Point, r: Point) -> int:
@@ -69,6 +69,82 @@ def intersection_check(p1: Point, p2: Point, q1: Point, q2: Point) -> bool:
         return True
 
     return False
+
+
+def valid_diagonal(v1: PolygonVertex, v2: PolygonVertex) -> bool:
+    """
+    Checks if v1->v2 is a valid diagonal.
+
+    Checks:
+        1. v1->v2 is inside cone v1->v1.next and v1->v1.prev
+        2. v2->v1 is inside cone v2->v2.next and v2->v2.prev
+        3. v1->v2 does not intersect any other edge
+
+    Args:
+        v1: First vertex.
+        v2: Second vertex.
+
+    Returns:
+        True if v1->v2 is a valid diagonal, False otherwise.
+    """
+    # INCONE CHECKS
+
+    # A. check v1->v2 is inside cone v1->v1.next and v1->v1.prev
+    v1_prev = v1.prev
+    v1_next = v1.next
+
+    # check 1: v2 vs v1->v1.next
+    check1 = orientation_check(v1.p, v1_next.p, v2.p)
+    # check 2: v2 vs v1->v1.prev
+    check2 = orientation_check(v1_prev.p, v1.p, v2.p)
+
+    # if v1 is convex / collinear, then check1 and check2 should be right turns
+    if orientation_check(v1_prev.p, v1.p, v1_next.p) <= 0:
+        in_cone = check1 == -1 and check2 == -1
+    # if v1 is reflex, then check1 and check2 should be both left turns
+    else:
+        in_cone = not (check1 == 1 and check2 == 1)
+
+    if not in_cone:
+        return False
+
+    # B. check v2->v1 is inside cone v2->v2.next and v2->v2.prev
+    v2_prev = v2.prev
+    v2_next = v2.next
+
+    # check 1: v1 vs v2->v2.next
+    check1 = orientation_check(v2.p, v2_next.p, v1.p)
+    # check 2: v1 vs v2->v2.prev
+    check2 = orientation_check(v2_prev.p, v2.p, v1.p)
+
+    # if v2 is convex / collinear, then check1 and check2 should be right turns
+    if orientation_check(v2_prev.p, v2.p, v2_next.p) <= 0:
+        in_cone_opp = check1 == -1 and check2 == -1
+    # if v2 is reflex, then check1 and check2 should be both left turns
+    else:
+        in_cone_opp = not (check1 == 1 and check2 == 1)
+
+    if not in_cone_opp:
+        return False
+
+    # POLYGON INTERSECT CHECK
+
+    curr = v1
+    nxt = v1.next
+    while True:
+        # check if curr->nxt intersects v1->v2
+        if intersection_check(curr.p, nxt.p, v1.p, v2.p):
+            return False
+
+        # move to next edge
+        curr = nxt
+        nxt = nxt.next
+
+        # break on loop back to start
+        if curr == v1:
+            break
+
+    return True
 
 
 def _cross_product(p: Point, q: Point, r: Point) -> float:

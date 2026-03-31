@@ -7,3 +7,8 @@ floating point numbers, separated by a space). It will be useful to have the opt
 (and saving) input too. You may assume that the polygon is definitely simple.
 Experimentally compare the weight of the resulting triangulation with the weight of the triangulation
 obtained using ear clipping (algorithm Triangulate, from O’Rourke).
+
+
+```bash
+python -m src.ear_clipping --input_file sample_input.txt --output_file out.txt
+```
