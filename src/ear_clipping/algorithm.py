@@ -2,7 +2,7 @@ from ..models import Diagonal, Polygon, PolygonVertex, Triangle
 from ..utils import valid_diagonal
 
 
-def ear_init(head: PolygonVertex) -> list[int]:
+def init_ears(head: PolygonVertex) -> list[int]:
     """
     Initialize ears for the ear clipping algorithm.
     Adapted from Computational geometry in C by Joseph O'Rourke.
@@ -32,7 +32,7 @@ def ear_init(head: PolygonVertex) -> list[int]:
     return ears
 
 
-def ear_clipping_triangulate(polygon: Polygon) -> tuple[list[Triangle], list[Diagonal]]:
+def ear_clipping_triangulation(polygon: Polygon) -> tuple[list[Triangle], list[Diagonal]]:
     """
     Ear clipping algorithm for polygon triangulation.
     Adapted from Computational geometry in C by Joseph O'Rourke.
@@ -51,7 +51,7 @@ def ear_clipping_triangulate(polygon: Polygon) -> tuple[list[Triangle], list[Dia
     head = polygon.copy_chain()
 
     # Initialize ears
-    ears = ear_init(head)
+    ears = init_ears(head)
 
     # Triangulate
     triangles = []
@@ -94,3 +94,6 @@ def ear_clipping_triangulate(polygon: Polygon) -> tuple[list[Triangle], list[Dia
     triangles.append((head.prev.index, head.index, head.next.index))
 
     return triangles, diagonals
+
+
+__all__ = ["ear_clipping_triangulation", "init_ears"]

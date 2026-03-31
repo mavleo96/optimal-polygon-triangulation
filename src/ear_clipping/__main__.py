@@ -2,7 +2,7 @@ import argparse
 
 from ..models import Polygon
 from ..utils import read_input, validate_polygon_input, validate_triangulation
-from .algorithm import ear_clipping_triangulate
+from .algorithm import ear_clipping_triangulation
 
 
 def main():
@@ -20,7 +20,7 @@ def main():
     polygon = Polygon(vertices)
 
     # Triangulate
-    _, diagonals = ear_clipping_triangulate(polygon)
+    _, diagonals = ear_clipping_triangulation(polygon)
 
     # Validate triangulation
     if args.validate:

@@ -2,7 +2,7 @@ from ..constants import TOL
 from ..models import Point, PolygonVertex
 
 
-def orientation_check(p: Point, q: Point, r: Point) -> int:
+def check_orientation(p: Point, q: Point, r: Point) -> int:
     """
     Returns 1 if left turn, -1 if right turn, 0 if collinear
 
@@ -23,7 +23,7 @@ def orientation_check(p: Point, q: Point, r: Point) -> int:
         return -1
 
 
-def intersection_check(p1: Point, p2: Point, q1: Point, q2: Point) -> bool:
+def check_intersection(p1: Point, p2: Point, q1: Point, q2: Point) -> bool:
     """
     Checks if segments p1->p2 and q1->q2 properly intersect.
     Note: 1. shared endpoints are not considered as intersections.
@@ -39,25 +39,25 @@ def intersection_check(p1: Point, p2: Point, q1: Point, q2: Point) -> bool:
         True if the segments properly intersect, False otherwise.
     """
     # Orient of q1 w.r.t. p1->p2
-    o1 = orientation_check(p1, p2, q1)
+    o1 = check_orientation(p1, p2, q1)
     if o1 == 0 and q1 != p1 and q1 != p2 and _on_segment(p1, p2, q1):
         # q1 is on p1->p2
         return True
 
     # Orient of q2 w.r.t. p1->p2
-    o2 = orientation_check(p1, p2, q2)
+    o2 = check_orientation(p1, p2, q2)
     if o2 == 0 and q2 != p1 and q2 != p2 and _on_segment(p1, p2, q2):
         # q2 is on p1->p2
         return True
 
     # Orient of p1 w.r.t. q1->q2
-    o3 = orientation_check(q1, q2, p1)
+    o3 = check_orientation(q1, q2, p1)
     if o3 == 0 and p1 != q1 and p1 != q2 and _on_segment(q1, q2, p1):
         # p1 is on q1->q2
         return True
 
     # Orient of p2 w.r.t. q1->q2
-    o4 = orientation_check(q1, q2, p2)
+    o4 = check_orientation(q1, q2, p2)
     if o4 == 0 and p2 != q1 and p2 != q2 and _on_segment(q1, q2, p2):
         # p2 is on q1->q2
         return True
@@ -94,12 +94,12 @@ def valid_diagonal(v1: PolygonVertex, v2: PolygonVertex) -> bool:
     v1_next = v1.next
 
     # check 1: v2 vs v1->v1.next
-    check1 = orientation_check(v1.p, v1_next.p, v2.p)
+    check1 = check_orientation(v1.p, v1_next.p, v2.p)
     # check 2: v2 vs v1->v1.prev
-    check2 = orientation_check(v1_prev.p, v1.p, v2.p)
+    check2 = check_orientation(v1_prev.p, v1.p, v2.p)
 
     # if v1 is convex / collinear, then check1 and check2 should be right turns
-    if orientation_check(v1_prev.p, v1.p, v1_next.p) <= 0:
+    if check_orientation(v1_prev.p, v1.p, v1_next.p) <= 0:
         in_cone = check1 == -1 and check2 == -1
     # if v1 is reflex, then check1 and check2 should be both left turns
     else:
@@ -113,12 +113,12 @@ def valid_diagonal(v1: PolygonVertex, v2: PolygonVertex) -> bool:
     v2_next = v2.next
 
     # check 1: v1 vs v2->v2.next
-    check1 = orientation_check(v2.p, v2_next.p, v1.p)
+    check1 = check_orientation(v2.p, v2_next.p, v1.p)
     # check 2: v1 vs v2->v2.prev
-    check2 = orientation_check(v2_prev.p, v2.p, v1.p)
+    check2 = check_orientation(v2_prev.p, v2.p, v1.p)
 
     # if v2 is convex / collinear, then check1 and check2 should be right turns
-    if orientation_check(v2_prev.p, v2.p, v2_next.p) <= 0:
+    if check_orientation(v2_prev.p, v2.p, v2_next.p) <= 0:
         in_cone_opp = check1 == -1 and check2 == -1
     # if v2 is reflex, then check1 and check2 should be both left turns
     else:
@@ -133,7 +133,7 @@ def valid_diagonal(v1: PolygonVertex, v2: PolygonVertex) -> bool:
     nxt = v1.next
     while True:
         # check if curr->nxt intersects v1->v2
-        if intersection_check(curr.p, nxt.p, v1.p, v2.p):
+        if check_intersection(curr.p, nxt.p, v1.p, v2.p):
             return False
 
         # move to next edge
@@ -160,4 +160,4 @@ def _on_segment(p: Point, q: Point, r: Point) -> bool:
     )
 
 
-__all__ = ["orientation_check", "intersection_check", "valid_diagonal"]
+__all__ = ["check_orientation", "check_intersection", "valid_diagonal"]

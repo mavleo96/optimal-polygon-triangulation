@@ -1,5 +1,5 @@
 from ..models import Diagonal, Point, Polygon
-from .geometry import intersection_check
+from .geometry import check_intersection
 
 
 def validate_polygon_input(points: list[Point]) -> None:
@@ -54,12 +54,12 @@ def validate_triangulation(polygon: Polygon, diagonals: list[Diagonal]) -> None:
             c, d = diagonals[j]
             d2 = [polygon.vertices[c].p, polygon.vertices[d].p]
 
-            if intersection_check(*d1, *d2):
+            if check_intersection(*d1, *d2):
                 raise ValueError(f"Diagonals {i} and {j} intersect")
 
         # B. check for intersections between edges and diagonals
         for j, edge in enumerate(polygon.edges):
-            if intersection_check(*edge, *d1):
+            if check_intersection(*edge, *d1):
                 raise ValueError(f"Edge {j} intersects diagonal {a} {b}")
 
 
@@ -87,8 +87,8 @@ def _check_self_intersections(points: list[Point]) -> bool:
 
     for i in range(n):
         for j in range(i + 1, n):
-            # Note: intersection_check will return False on shared endpoints.
-            if intersection_check(edges[i][0], edges[i][1], edges[j][0], edges[j][1]):
+            # Note: check_intersection will return False on shared endpoints.
+            if check_intersection(edges[i][0], edges[i][1], edges[j][0], edges[j][1]):
                 return False
     return True
 
