@@ -1,8 +1,5 @@
-from ..models import Polygon, PolygonVertex
+from ..models import Diagonal, Polygon, PolygonVertex, Triangle
 from ..utils import valid_diagonal
-
-Triangle = tuple[PolygonVertex, PolygonVertex, PolygonVertex]
-Diagonal = tuple[PolygonVertex, PolygonVertex]
 
 
 def ear_init(head: PolygonVertex) -> list[int]:
@@ -71,8 +68,8 @@ def ear_clipping_triangulate(polygon: Polygon) -> tuple[list[Triangle], list[Dia
                 v0 = v1.prev
 
                 # Add the triangle to the list
-                triangles.append((v1, v2, v3))
-                diagonals.append((v1, v3))
+                triangles.append((v1.index, v2.index, v3.index))
+                diagonals.append((v1.index, v3.index))
 
                 # Update the ear status of prev and next vertices
                 ears[v1.index] = valid_diagonal(v0, v3)
@@ -94,6 +91,6 @@ def ear_clipping_triangulate(polygon: Polygon) -> tuple[list[Triangle], list[Dia
                 break
 
     # Add the last triangle
-    triangles.append((head.prev, head, head.next))
+    triangles.append((head.prev.index, head.index, head.next.index))
 
     return triangles, diagonals

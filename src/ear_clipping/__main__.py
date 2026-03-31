@@ -1,7 +1,7 @@
 import argparse
 
 from ..models import Polygon
-from ..utils import read_input, validate_input
+from ..utils import read_input, validate_polygon_input, validate_triangulation
 from .algorithm import ear_clipping_triangulate
 
 
@@ -9,22 +9,26 @@ def main():
     parser = argparse.ArgumentParser(description="Ear clipping algorithm for polygon triangulation")
     parser.add_argument("--input_file", type=str, help="Path to the input file")
     parser.add_argument("--output_file", type=str, help="Path to the output file")
+    parser.add_argument("--validate", action="store_true", help="Validate the triangulation")
     args = parser.parse_args()
 
     # Parse and validate input
     vertices = read_input(args.input_file)
-    validate_input(vertices)
+    validate_polygon_input(vertices)
 
     # Initialize polygon
     polygon = Polygon(vertices)
 
     # Triangulate
-    triangles, _ = ear_clipping_triangulate(polygon)
+    _, diagonals = ear_clipping_triangulate(polygon)
+
+    # Validate triangulation
+    if args.validate:
+        validate_triangulation(polygon, diagonals)
 
     # Write output
     with open(args.output_file, "w") as f:
-        for triangle in triangles:
-            f.write(f"{triangle[0].index} {triangle[1].index} {triangle[2].index}\n")
+        f.write("\n".join([f"{i} {j}" for i, j in diagonals]) + "\n")
 
 
 if __name__ == "__main__":

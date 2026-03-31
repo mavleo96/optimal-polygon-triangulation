@@ -1,4 +1,8 @@
 from .point import Point
 from .polygon import Polygon, PolygonVertex
 
-__all__ = ["Point", "PolygonVertex", "Polygon"]
+Triangle = tuple[int, int, int]
+Diagonal = tuple[int, int]
+
+
+__all__ = ["Point", "PolygonVertex", "Polygon", "Triangle", "Diagonal"]

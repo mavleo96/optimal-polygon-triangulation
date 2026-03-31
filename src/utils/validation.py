@@ -1,8 +1,8 @@
-from ..models import Point
+from ..models import Diagonal, Point, Polygon
 from .geometry import intersection_check
 
 
-def validate_input(points: list[Point]) -> None:
+def validate_polygon_input(points: list[Point]) -> None:
     """
     Validates the input points.
 
@@ -37,6 +37,32 @@ def validate_input(points: list[Point]) -> None:
         raise ValueError("Polygon is not clockwise")
 
 
+def validate_triangulation(polygon: Polygon, diagonals: list[Diagonal]) -> None:
+    """
+    Validates the triangulation.
+
+    Checks:
+    - A. no self-intersections
+    - B. no duplicate points
+    """
+    for i in range(len(diagonals)):
+        a, b = diagonals[i]
+        d1 = [polygon.vertices[a].p, polygon.vertices[b].p]
+
+        # A. check for intersections between diagonals
+        for j in range(i + 1, len(diagonals)):
+            c, d = diagonals[j]
+            d2 = [polygon.vertices[c].p, polygon.vertices[d].p]
+
+            if intersection_check(*d1, *d2):
+                raise ValueError(f"Diagonals {i} and {j} intersect")
+
+        # B. check for intersections between edges and diagonals
+        for j, edge in enumerate(polygon.edges):
+            if intersection_check(*edge, *d1):
+                raise ValueError(f"Edge {j} intersects diagonal {a} {b}")
+
+
 def _check_clockwise(points: list[Point]) -> bool:
     """
     Checks if the polygon defined by points is clockwise.
@@ -65,3 +91,6 @@ def _check_self_intersections(points: list[Point]) -> bool:
             if intersection_check(edges[i][0], edges[i][1], edges[j][0], edges[j][1]):
                 return False
     return True
+
+
+__all__ = ["validate_polygon_input", "validate_triangulation"]

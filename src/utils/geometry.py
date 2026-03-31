@@ -160,4 +160,4 @@ def _on_segment(p: Point, q: Point, r: Point) -> bool:
     )
 
 
-__all__ = ["orientation_check", "intersection_check"]
+__all__ = ["orientation_check", "intersection_check", "valid_diagonal"]

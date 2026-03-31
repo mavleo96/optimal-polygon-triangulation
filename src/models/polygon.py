@@ -19,8 +19,9 @@ class PolygonVertex:
 
 class Polygon:
     def __init__(self, vertices: list[Point]):
-        self.head, self.vertices = self._build(vertices)
         self.n = len(vertices)
+        self.head, self.vertices = self._build(vertices)
+        self.edges = self._build_edges(self.vertices)
 
     @staticmethod
     def _build(points: list[Point]) -> tuple[PolygonVertex, list[PolygonVertex]]:
@@ -32,6 +33,10 @@ class Polygon:
             vertex_list[i].prev = vertex_list[(i - 1) % n]
 
         return vertex_list[0], vertex_list
+
+    @staticmethod
+    def _build_edges(vertices: list[PolygonVertex]) -> list[tuple[Point, Point]]:
+        return [(v.p, v.next.p) for v in vertices]
 
     def copy_chain(self) -> PolygonVertex:
         new_head = PolygonVertex(self.head.index, self.head.p)
