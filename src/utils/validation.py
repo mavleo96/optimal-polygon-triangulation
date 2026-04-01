@@ -42,8 +42,9 @@ def validate_triangulation(polygon: Polygon, diagonals: list[Diagonal]) -> None:
     Validates the triangulation.
 
     Checks:
-    - A. no self-intersections
-    - B. no duplicate points
+    - A. no intersections between diagonals
+    - B. no intersections between edges and diagonals
+    - C. complete triangulation
     """
     for i in range(len(diagonals)):
         a, b = diagonals[i]
@@ -61,6 +62,10 @@ def validate_triangulation(polygon: Polygon, diagonals: list[Diagonal]) -> None:
         for j, edge in enumerate(polygon.edges):
             if check_intersection(*edge, *d1):
                 raise ValueError(f"Edge {j} intersects diagonal {a} {b}")
+
+    # C. check if the triangulation is complete
+    if len(diagonals) != len(polygon) - 3:
+        raise ValueError("Triangulation is not complete")
 
 
 def _check_clockwise(points: list[Point]) -> bool:
