@@ -71,7 +71,7 @@ def check_intersection(p1: Point, p2: Point, q1: Point, q2: Point) -> bool:
     return False
 
 
-def valid_diagonal(v1: PolygonVertex, v2: PolygonVertex) -> bool:
+def check_valid_diagonal(v1: PolygonVertex, v2: PolygonVertex) -> bool:
     """
     Checks if v1->v2 is a valid diagonal.
 
@@ -160,4 +160,4 @@ def _on_segment(p: Point, q: Point, r: Point) -> bool:
     )
 
 
-__all__ = ["check_orientation", "check_intersection", "valid_diagonal"]
+__all__ = ["check_orientation", "check_intersection", "check_valid_diagonal"]

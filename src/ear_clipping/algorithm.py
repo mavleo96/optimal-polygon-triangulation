@@ -1,5 +1,5 @@
 from ..models import Diagonal, Polygon, PolygonVertex, Triangle
-from ..utils import valid_diagonal
+from ..utils import check_valid_diagonal
 
 
 def init_ears(head: PolygonVertex) -> list[int]:
@@ -23,7 +23,7 @@ def init_ears(head: PolygonVertex) -> list[int]:
         nxt = curr.next
 
         # If the diagonal is valid, set the ear to 1, otherwise 0
-        ears.append(1 if valid_diagonal(prev, nxt) else 0)
+        ears.append(1 if check_valid_diagonal(prev, nxt) else 0)
 
         curr = curr.next
         if curr == head:
@@ -72,8 +72,8 @@ def ear_clipping_triangulation(polygon: Polygon) -> tuple[list[Triangle], list[D
                 diagonals.append((v1.index, v3.index))
 
                 # Update the ear status of prev and next vertices
-                ears[v1.index] = valid_diagonal(v0, v3)
-                ears[v3.index] = valid_diagonal(v1, v4)
+                ears[v1.index] = check_valid_diagonal(v0, v3)
+                ears[v3.index] = check_valid_diagonal(v1, v4)
 
                 # Update the next and previous pointers
                 v1.next = v3

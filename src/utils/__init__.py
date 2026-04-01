@@ -1,4 +1,4 @@
-from .geometry import check_intersection, check_orientation, valid_diagonal
+from .geometry import check_intersection, check_orientation, check_valid_diagonal
 from .io import read_input
 from .validation import validate_polygon_input, validate_triangulation
 from .visualization import visualize_polygon
@@ -8,7 +8,7 @@ __all__ = [
     "check_orientation",
     "check_intersection",
     "validate_polygon_input",
-    "valid_diagonal",
+    "check_valid_diagonal",
     "validate_triangulation",
     "visualize_polygon",
 ]
