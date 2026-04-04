@@ -1,16 +1,17 @@
-import math
 from collections.abc import Callable
 
-CostFn = Callable[[float, float | None, float | None], float]
+CostFn = Callable[[float | None, float | None, float | None], float | None]
 
 
 def sum_length_cost(
-    base_cost: float, left_subcost: float | None, right_subcost: float | None
+    base_cost: float | None, left_subcost: float | None, right_subcost: float | None
 ) -> float:
     """
     Sum the length of base diagonal and the diagnols of left and right subtrees.
     """
-    cost = base_cost
+    cost = 0
+    if base_cost is not None:
+        cost += base_cost
     if left_subcost is not None:
         cost += left_subcost
     if right_subcost is not None:
@@ -19,32 +20,38 @@ def sum_length_cost(
 
 
 def max_length_cost(
-    base_cost: float, left_subcost: float | None, right_subcost: float | None
-) -> float:
+    base_cost: float | None, left_subcost: float | None, right_subcost: float | None
+) -> float | None:
     """
     Return the max of base diagonal and the diagonals of left and right subtrees.
     """
-    cands = [base_cost]
+    cands = []
+    if base_cost is not None:
+        cands.append(base_cost)
     if left_subcost is not None:
         cands.append(left_subcost)
     if right_subcost is not None:
         cands.append(right_subcost)
-    return max(cands) if cands else math.inf
+    return max(cands) if cands else None
 
 
 def min_length_cost(
-    base_cost: float, left_subcost: float | None, right_subcost: float | None
-) -> float:
+    base_cost: float | None, left_subcost: float | None, right_subcost: float | None
+) -> float | None:
     """
     Return the max of neg of base diagonal and the diagonals of left and right subtrees.
-    Note: we use negative to maximize the min cost.
+    Note: To maximize the shortest diagonal, we negate distances and minimize
+          This is equivalent to: max(d1, d2, ...) = -min(-d1, -d2, ...)
+          Since _dp minimizes cost, negating converts maximization to minimization.
     """
-    cands = [-base_cost]
+    cands = []
+    if base_cost is not None:
+        cands.append(-base_cost)
     if left_subcost is not None:
         cands.append(left_subcost)
     if right_subcost is not None:
         cands.append(right_subcost)
-    return max(cands) if cands else math.inf
+    return max(cands) if cands else None
 
 
 COST_FUNC_MAP = {
