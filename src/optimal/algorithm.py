@@ -1,23 +1,21 @@
 import math
 
 from ..models import Diagonal, Polygon, PolygonVertex, Triangle
-from ..utils import check_valid_diagonal
 from .cost import COST_FUNC_MAP, CostFn
-from .utils import check_if_consective
+from .utils import check_if_valid_split, distance
+
+_Cache = dict[tuple[int, int], tuple[float, int]]
 
 
 def optimal_triangulation(polygon: Polygon, criteria: str) -> tuple[list[Triangle], list[Diagonal]]:
     splits_cache = {}  # (start, end) -> (cost, mid)
     cost_fn = COST_FUNC_MAP[criteria]
     _dp(0, len(polygon) - 1, polygon.vertices, splits_cache, cost_fn)
-
-    triangles, diagonals = _backtrack(0, len(polygon) - 1, polygon.vertices, splits_cache)
-
-    return triangles, diagonals
+    return _backtrack(0, len(polygon) - 1, polygon.vertices, splits_cache)
 
 
 def _backtrack(
-    start: int, end: int, vertices: list[PolygonVertex], cache: dict
+    start: int, end: int, vertices: list[PolygonVertex], cache: _Cache
 ) -> tuple[list[Triangle], list[Diagonal]]:
     triangles = []
     diagonals = []
@@ -25,31 +23,33 @@ def _backtrack(
     vstart = vertices[start]
     vend = vertices[end]
 
-    if check_if_consective(vstart, vend):
+    # If consecutive, return
+    if vstart.next == vend:
         return triangles, diagonals
 
+    # Get the best mid
     _, mid = cache[(start, end)]
-    vmid = vertices[mid]
-
-    if not check_if_consective(vstart, vmid):
-        left_triangles, left_diagonals = _backtrack(start, mid, vertices, cache)
-        triangles.extend(left_triangles)
-        diagonals.extend(left_diagonals)
-        diagonals.append((start, mid))
-
     triangles.append((start, mid, end))
+    if vend.next != vstart:
+        diagonals.append((start, end))
 
-    if not check_if_consective(vmid, vend):
-        right_triangles, right_diagonals = _backtrack(mid, end, vertices, cache)
-        triangles.extend(right_triangles)
-        diagonals.extend(right_diagonals)
-        diagonals.append((mid, end))
+    # Backtrack the left subtree; add the triangles and diagonals
+    left_triangles, left_diagonals = _backtrack(start, mid, vertices, cache)
+    triangles.extend(left_triangles)
+    diagonals.extend(left_diagonals)
+
+    # Backtrack the right subtree; add the triangles and diagonals
+    right_triangles, right_diagonals = _backtrack(mid, end, vertices, cache)
+    triangles.extend(right_triangles)
+    diagonals.extend(right_diagonals)
 
     return triangles, diagonals
 
 
-def _dp(start: int, end: int, vertices: list[PolygonVertex], cache: dict, cost_fn: CostFn) -> float:
-    # Return cached result if it exists
+def _dp(
+    start: int, end: int, vertices: list[PolygonVertex], cache: _Cache, cost_fn: CostFn
+) -> float | None:
+    # Return cached result if available
     if (start, end) in cache:
         return cache[(start, end)][0]
 
@@ -58,45 +58,42 @@ def _dp(start: int, end: int, vertices: list[PolygonVertex], cache: dict, cost_f
     vstart = vertices[start]
     vend = vertices[end]
 
-    # Iterate over all possible candidates for the middle vertex
+    # Base case: if consecutive, return None
+    if vstart.next == vend:
+        return None
 
+    # Initialize best cost and best mid
     best_cost = math.inf
     best_mid = None
+
+    # Get the base cost
+    base_cost = distance(vstart.p, vend.p)
+
     # Note: candidates in range (start, end) exclusive
     cand_length = (end - start - 1) if end > start else (n - start + end - 1)
     for i in range(cand_length):
         mid = (start + i + 1) % n
         vmid = vertices[mid]
 
-        # Check if diag start->mid is valid if not an edge
-        consective_check1 = check_if_consective(vstart, vmid)
-        diagonal_check1 = check_valid_diagonal(vstart, vmid)
-        if not consective_check1 and not diagonal_check1:
+        # Check if the split is valid
+        if not check_if_valid_split(vstart, vmid, vend):
             continue
 
-        # Check if diag mid->end is valid if not an edge
-        diagonal_check2 = check_valid_diagonal(vmid, vend)
-        consective_check2 = check_if_consective(vmid, vend)
-        if not consective_check2 and not diagonal_check2:
-            continue
+        # Get the left and right subtree costs
+        left_subcost = _dp(start, mid, vertices, cache, cost_fn)
+        right_subcost = _dp(mid, end, vertices, cache, cost_fn)
 
-        subcosts = []
+        # Compute the cost
+        cost = cost_fn(base_cost, left_subcost, right_subcost)
 
-        if not consective_check1:
-            left_subcost = _dp(start, mid, vertices, cache, cost_fn)
-            subcosts.append(left_subcost)
-
-        if not consective_check2:
-            right_subcost = _dp(mid, end, vertices, cache, cost_fn)
-            subcosts.append(right_subcost)
-
-        cost = cost_fn(vstart, vmid, vend, subcosts)
-
-        if cost < best_cost:
+        # Update the best cost and best mid if the current cost is better
+        if cost <= best_cost:
             best_cost = cost
             best_mid = mid
 
-    cache.update({(start, end): (best_cost, best_mid)})
+    # Cache the result
+    cache[(start, end)] = (best_cost, best_mid)
+
     return best_cost
 
 
