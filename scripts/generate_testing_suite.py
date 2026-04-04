@@ -46,7 +46,7 @@ from polygenerator import (
 sys.path.insert(0, os.getcwd())
 
 from src.models import Point
-from src.utils import validate_polygon_input
+from src.utils.validation import validate_polygon_input
 
 RANDOM_SEED = 0
 STEP_SIZE = 5

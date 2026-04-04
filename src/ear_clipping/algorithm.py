@@ -1,5 +1,5 @@
 from ..models import Diagonal, Polygon, PolygonVertex, Triangle
-from ..utils import check_valid_diagonal
+from ..utils.geometry import check_valid_diagonal
 
 
 def init_ears(head: PolygonVertex) -> list[int]:
@@ -13,6 +13,8 @@ def init_ears(head: PolygonVertex) -> list[int]:
     Returns:
         ears: List of ears
     """
+    assert head.index == 0, "Head must be the first vertex"
+
     # Initialize ears list
     ears = []
 

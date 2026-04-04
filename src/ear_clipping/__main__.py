@@ -1,7 +1,8 @@
 import argparse
 
 from ..models import Polygon
-from ..utils import read_input, validate_polygon_input, validate_triangulation
+from ..utils.io import read_input
+from ..utils.validation import validate_polygon_input, validate_triangulation
 from .algorithm import ear_clipping_triangulation
 
 
