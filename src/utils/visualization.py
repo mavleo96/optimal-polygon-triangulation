@@ -3,11 +3,11 @@ from adjustText import adjust_text
 
 from ..models import Diagonal, Polygon
 
-# colorblind-safe palette (Wong 2011)
-COLOR_VERTEX = "#56B4E9"  # sky blue
-COLOR_EAR = "#E69F00"  # orange
-COLOR_EDGE = "#000000"  # black
-COLOR_DIAGONAL = "#0072B2"  # blue
+COLOR_POLYGON = "#FDF8EC"  # warm ivory fill
+COLOR_EDGE = "#3D2B00"  # dark brown (crisp edges)
+COLOR_VERTEX = "#B8860B"  # dark goldenrod (dots)
+COLOR_EAR = "#E63946"  # red (pops against gold)
+COLOR_DIAGONAL = "#7A5C00"  # deep gold (dashed lines)
 
 ARROWPROPS_VERTEX = dict(
     arrowstyle="->",
@@ -69,6 +69,9 @@ def visualize_polygon(
             zorder=1,
         )
 
+    # Polygon interior color
+    ax.fill(xs, ys, COLOR_POLYGON, zorder=2)
+
     # diagonals
     if diagonals:
         diagonal_texts = []
@@ -81,7 +84,7 @@ def visualize_polygon(
                 COLOR_DIAGONAL,
                 linewidth=linewidth,
                 linestyle="--",
-                zorder=2,
+                zorder=3,
             )
             mid_x = (a.p.x + b.p.x) / 2
             mid_y = (a.p.y + b.p.y) / 2

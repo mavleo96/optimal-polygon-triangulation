@@ -4,17 +4,50 @@ from ..models import Diagonal, Polygon, PolygonVertex, Triangle
 from ..utils.geometry import check_valid_diagonal, distance
 from .cost import COST_FUNC_MAP, CostFn
 
-_Cache = dict[tuple[int, int], tuple[float, int | None]]
+_Cache = list[list[float | None]]
 
 
 def optimal_triangulation(
     polygon: Polygon, criteria: str, return_cache: bool = False
-) -> tuple[list[Triangle], list[Diagonal]] | tuple[list[Triangle], list[Diagonal], _Cache]:
+) -> tuple[list[Triangle], list[Diagonal]] | tuple[list[Triangle], list[Diagonal], _Cache, _Cache]:
+    """
+    Optimal triangulation of a simple polygon using interval dynamic programming.
+
+    Optimality is defined by the given criteria:
+        - "sum": minimize the total length of all diagonals
+        - "max": minimize the length of the longest diagonal
+        - "min": maximize the length of the shortest diagonal
+
+    Time complexity:  O(n³)
+    Space complexity: O(n²)
+
+    Args:
+        polygon:      Polygon to triangulate.
+        criteria:     Optimality criterion.
+        return_cache: If True, also returns the DP cache tables.
+
+    Returns:
+        (triangles, diagonals) if return_cache is False.
+        (triangles, diagonals, (splits_cache, costs_cache)) if return_cache is True.
+
+        triangles: n-2 triangles as (i, j, k) index triples.
+        diagonals: n-3 diagonals as (i, j) index pairs, excluding polygon edges.
+        splits_cache: n×n array where splits_cache[i][j] is the optimal split vertex
+                      for subproblem (i, j).
+        costs_cache:  n×n array where costs_cache[i][j] is the optimal cost
+                      for subproblem (i, j).
+    """
+    assert len(polygon) >= 3, "Polygon must have at least 3 vertices"
+    assert criteria in COST_FUNC_MAP, "Invalid criteria"
+
     n = len(polygon)
+    cost_fn = COST_FUNC_MAP[criteria]
+
+    # Initialize caches
     costs_cache = [[None] * n for _ in range(n)]
     splits_cache = [[None] * n for _ in range(n)]
 
-    cost_fn = COST_FUNC_MAP[criteria]
+    # Compute the optimal triangulation
     _dp(0, n - 1, polygon.vertices, splits_cache, costs_cache, cost_fn)
 
     if return_cache:
@@ -31,6 +64,40 @@ def _dp(
     costs_cache: _Cache,
     cost_fn: CostFn,
 ) -> float | None:
+    """
+    Recursive memoized DP over polygon sub-arcs.
+
+    Computes the optimal cost to triangulate the sub-polygon defined by the
+    clockwise arc from vertices[start] to vertices[end], where (start, end)
+    is either a polygon edge or a previously verified valid diagonal.
+
+    To restrict diagonal validity checks to the current sub-arc (O(k) instead
+    of O(n)), the linked list is temporarily modified: vend.next is set to
+    vstart and vstart.prev is set to vend, making them adjacent. This is safe
+    because (start, end) has already been verified as a valid diagonal, so
+    the polygon can be cleanly split at this chord. Pointers are restored
+    before returning.
+
+    Cache sentinel values:
+        splits_cache[i][j] = None  → subproblem not yet computed
+        splits_cache[i][j] = -1    → base case (consecutive) or no valid split
+        splits_cache[i][j] = k     → optimal split vertex is k
+
+        costs_cache[i][j] = None      → base case (polygon edge, no diagonals)
+        costs_cache[i][j] = math.inf  → no valid triangulation exists
+        costs_cache[i][j] = float     → optimal cost
+
+    Args:
+        start:        Start vertex index of the sub-arc.
+        end:          End vertex index of the sub-arc.
+        vertices:     Full polygon vertex list.
+        splits_cache: n×n memoization table for optimal split vertices.
+        costs_cache:  n×n memoization table for optimal costs.
+        cost_fn:      Cost function defining the optimality criterion.
+
+    Returns:
+        cost: Optimal cost for this subproblem, or None if (start, end) is a polygon edge.
+    """
     # Return cached result if available
     if splits_cache[start][end] is not None:
         return costs_cache[start][end]
@@ -47,15 +114,16 @@ def _dp(
         costs_cache[start][end] = None
         return None
 
-    # If not valid split, return
+    # Early exit: (start, end) is not a polygon edge and not a valid diagonal —
+    # this subproblem cannot be triangulated from the parent's context.
     if not _is_edge(start, end, n) and not check_valid_diagonal(vstart, vend):
         splits_cache[start][end] = -1
         costs_cache[start][end] = math.inf
         return math.inf
 
-    # Update the previous and next pointers
-    # Note: Since vstart->vend is a valid diagonal, we can safely cut the polygon
-    #       This makes checking valid diagonals faster in child calls.
+    # Temporarily restrict the linked list to the sub-arc [start, end].
+    # This makes check_valid_diagonal in child calls traverse only sub-arc edges
+    # (O(k)) rather than the full polygon (O(n)).
     start_prev = vstart.prev
     end_next = vend.next
     vstart.prev = vend
@@ -75,23 +143,19 @@ def _dp(
     for i in range(cand_length):
         mid = (start + i + 1) % n
 
-        # Get the left and right subtree costs
         left_subcost = _dp(start, mid, vertices, splits_cache, costs_cache, cost_fn)
         right_subcost = _dp(mid, end, vertices, splits_cache, costs_cache, cost_fn)
 
-        # Compute the cost
         cost = cost_fn(base_cost, left_subcost, right_subcost)
 
-        # Update the best cost and best mid if the current cost is better
         if cost is not None and cost < best_cost:
             best_cost = cost
             best_mid = mid
 
-    # Cache the result
     splits_cache[start][end] = best_mid
     costs_cache[start][end] = best_cost
 
-    # Restore the previous and next pointers
+    # Restore the linked list to its original state
     vstart.prev = start_prev
     vend.next = end_next
 
@@ -101,24 +165,44 @@ def _dp(
 def _backtrack(
     start: int, end: int, vertices: list[PolygonVertex], cache: _Cache
 ) -> tuple[list[Triangle], list[Diagonal]]:
+    """
+    Reconstructs the optimal triangulation by backtracking through the split table.
+
+    Each call owns exactly one triangle (start, mid, end) and one diagonal
+    (start, end) if it is not a polygon edge. Child calls recursively add their
+    own triangles and diagonals for the left sub-arc (start, mid) and right
+    sub-arc (mid, end).
+
+    Args:
+        start:    Start vertex index of the sub-arc.
+        end:      End vertex index of the sub-arc.
+        vertices: Full polygon vertex list.
+        cache:    splits_cache table from _dp.
+
+    Returns:
+        triangles: n-2 triangles as (i, j, k) index triples.
+        diagonals: n-3 diagonals as (i, j) index pairs, excluding polygon edges.
+
+    Raises:
+        ValueError: If cache[start][end] == -1 for a non-consecutive pair,
+                    indicating no valid triangulation was found (should not
+                    occur if _dp completed successfully).
+    """
     triangles = []
     diagonals = []
 
     vstart = vertices[start]
     vend = vertices[end]
 
-    # If consecutive, return
     if vstart.next == vend:
         return triangles, diagonals
 
-    # Get the best mid
     mid = cache[start][end]
     if mid == -1:
         raise ValueError(f"No valid split for interval ({start}, {end})")
 
-    # (start, end) is the base edge of this subproblem.
-    # Add it as a diagonal if it is not a polygon edge.
-    # Child calls will add their own base edges recursively.
+    # This level owns triangle (start, mid, end) and diagonal (start, end)
+    # if (start, end) is not a polygon edge. Child calls own their own base edges.
     triangles.append((start, mid, end))
     if vend.next != vstart:
         diagonals.append((start, end))
@@ -136,7 +220,7 @@ def _backtrack(
     return triangles, diagonals
 
 
-def _is_edge(start, end, n):
+def _is_edge(start: int, end: int, n: int) -> bool:
     return abs(start - end) == 1 or (start == 0 and end == n - 1)
 
 

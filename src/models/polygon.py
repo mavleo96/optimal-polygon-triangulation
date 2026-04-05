@@ -14,7 +14,7 @@ class PolygonVertex:
         return f"PolygonVertex(index={self.index}, point={self.p})"
 
     def __str__(self):
-        return f"({self.p.x}, {self.p.y})"
+        return f"({self.p.x:.3f}, {self.p.y:.3f})"
 
 
 class Polygon:

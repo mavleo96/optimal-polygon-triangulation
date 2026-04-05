@@ -5,6 +5,7 @@ from ..utils.geometry import check_valid_diagonal
 def init_ears(head: PolygonVertex) -> list[int]:
     """
     Initialize ears for the ear clipping algorithm.
+    A vertex is an ear if the diagonal between its neighbors is valid.
     Adapted from Computational geometry in C by Joseph O'Rourke.
 
     Args:
@@ -36,15 +37,18 @@ def init_ears(head: PolygonVertex) -> list[int]:
 
 def ear_clipping_triangulation(polygon: Polygon) -> tuple[list[Triangle], list[Diagonal]]:
     """
-    Ear clipping algorithm for polygon triangulation.
+    Ear clipping algorithm for simple polygon triangulation.
     Adapted from Computational geometry in C by Joseph O'Rourke.
+
+    Time complexity: O(n²). Does not mutate the input polygon.
+    Space complexity: O(n).
 
     Args:
         polygon: Polygon to triangulate
 
     Returns:
-        triangles: List of triangles
-        diagonals: List of diagonals
+        triangles: n-2 triangles as (i, j, k) index triples.
+        diagonals: n-3 diagonals as (i, j) index pairs, excluding polygon edges.
     """
     assert len(polygon) >= 3, "Polygon must have at least 3 vertices"
 
@@ -58,8 +62,9 @@ def ear_clipping_triangulation(polygon: Polygon) -> tuple[list[Triangle], list[D
     # Triangulate
     triangles = []
     diagonals = []
+    # outer loop: repeats until only a triangle remains
     while n > 3:
-        # Traverse the polygon
+        # inner loop: scans for the next ear starting from head
         v2 = head
         while 1:
             # If the vertex is an ear, chop it off
@@ -69,19 +74,17 @@ def ear_clipping_triangulation(polygon: Polygon) -> tuple[list[Triangle], list[D
                 v1 = v2.prev
                 v0 = v1.prev
 
-                # Add the triangle to the list
                 triangles.append((v1.index, v2.index, v3.index))
                 diagonals.append((v1.index, v3.index))
 
-                # Update the ear status of prev and next vertices
+                # Only v1 and v3 may have changed ear status — their neighbor
+                # structure changed when v2 was removed from the linked list.
                 ears[v1.index] = check_valid_diagonal(v0, v3)
                 ears[v3.index] = check_valid_diagonal(v1, v4)
 
-                # Update the next and previous pointers
                 v1.next = v3
                 v3.prev = v1
 
-                # Update the head
                 head = v3
                 n -= 1
 
@@ -92,7 +95,7 @@ def ear_clipping_triangulation(polygon: Polygon) -> tuple[list[Triangle], list[D
             if v2 == head:
                 break
 
-    # Add the last triangle
+    # Remaining three vertices form the last triangle — no diagonal added.
     triangles.append((head.prev.index, head.index, head.next.index))
 
     return triangles, diagonals
