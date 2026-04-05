@@ -1,68 +1,99 @@
 import math
 
 from ..models import Diagonal, Polygon, PolygonVertex, Triangle
+from ..utils.geometry import check_valid_diagonal, distance
 from .cost import COST_FUNC_MAP, CostFn
-from .utils import check_if_valid_split, distance
 
 _Cache = dict[tuple[int, int], tuple[float, int | None]]
 
 
-def optimal_triangulation(polygon: Polygon, criteria: str) -> tuple[list[Triangle], list[Diagonal]]:
-    splits_cache = {}  # (start, end) -> (cost, mid)
+def optimal_triangulation(
+    polygon: Polygon, criteria: str, return_cache: bool = False
+) -> tuple[list[Triangle], list[Diagonal]] | tuple[list[Triangle], list[Diagonal], _Cache]:
+    n = len(polygon)
+    costs_cache = [[None] * n for _ in range(n)]
+    splits_cache = [[None] * n for _ in range(n)]
+
     cost_fn = COST_FUNC_MAP[criteria]
-    _dp(0, len(polygon) - 1, polygon.vertices, splits_cache, cost_fn)
-    return _backtrack(0, len(polygon) - 1, polygon.vertices, splits_cache)
+    _dp(0, n - 1, polygon.vertices, splits_cache, costs_cache, cost_fn)
+
+    if return_cache:
+        return _backtrack(0, n - 1, polygon.vertices, splits_cache), (splits_cache, costs_cache)
+    else:
+        return _backtrack(0, n - 1, polygon.vertices, splits_cache)
 
 
 def _dp(
-    start: int, end: int, vertices: list[PolygonVertex], cache: _Cache, cost_fn: CostFn
+    start: int,
+    end: int,
+    vertices: list[PolygonVertex],
+    splits_cache: _Cache,
+    costs_cache: _Cache,
+    cost_fn: CostFn,
 ) -> float | None:
     # Return cached result if available
-    if (start, end) in cache:
-        return cache[(start, end)][0]
+    if splits_cache[start][end] is not None:
+        return costs_cache[start][end]
 
     # Get the start and end vertices
     n = len(vertices)
     vstart = vertices[start]
     vend = vertices[end]
 
-    # Base case: if consecutive, return None
+    # Base case: subproblem is a polygon edge
     if vstart.next == vend:
+        # Note: special cost None for edges
+        splits_cache[start][end] = -1
+        costs_cache[start][end] = None
         return None
+
+    # If not valid split, return
+    if not _is_edge(start, end, n) and not check_valid_diagonal(vstart, vend):
+        splits_cache[start][end] = -1
+        costs_cache[start][end] = math.inf
+        return math.inf
+
+    # Update the previous and next pointers
+    # Note: Since vstart->vend is a valid diagonal, we can safely cut the polygon
+    #       This makes checking valid diagonals faster in child calls.
+    start_prev = vstart.prev
+    end_next = vend.next
+    vstart.prev = vend
+    vend.next = vstart
 
     # Initialize best cost and best mid
     best_cost = math.inf
-    best_mid = None
+    best_mid = -1
 
     # Get the base cost
     # Note: base_cost is None if (start, end) is a polygon edge
     #       polygon edges are excluded from all cost criteria.
-    base_cost = distance(vstart.p, vend.p) if vend.next != vstart else None
+    base_cost = distance(vstart.p, vend.p) if not _is_edge(start, end, n) else None
 
     # Note: candidates in range (start, end) exclusive
     cand_length = (end - start - 1) if end > start else (n - start + end - 1)
     for i in range(cand_length):
         mid = (start + i + 1) % n
-        vmid = vertices[mid]
-
-        # Check if the split is valid
-        if not check_if_valid_split(vstart, vmid, vend):
-            continue
 
         # Get the left and right subtree costs
-        left_subcost = _dp(start, mid, vertices, cache, cost_fn)
-        right_subcost = _dp(mid, end, vertices, cache, cost_fn)
+        left_subcost = _dp(start, mid, vertices, splits_cache, costs_cache, cost_fn)
+        right_subcost = _dp(mid, end, vertices, splits_cache, costs_cache, cost_fn)
 
         # Compute the cost
         cost = cost_fn(base_cost, left_subcost, right_subcost)
 
         # Update the best cost and best mid if the current cost is better
-        if cost is not None and cost <= best_cost:
+        if cost is not None and cost < best_cost:
             best_cost = cost
             best_mid = mid
 
     # Cache the result
-    cache[(start, end)] = (best_cost, best_mid)
+    splits_cache[start][end] = best_mid
+    costs_cache[start][end] = best_cost
+
+    # Restore the previous and next pointers
+    vstart.prev = start_prev
+    vend.next = end_next
 
     return best_cost
 
@@ -81,8 +112,8 @@ def _backtrack(
         return triangles, diagonals
 
     # Get the best mid
-    _, mid = cache[(start, end)]
-    if mid is None:
+    mid = cache[start][end]
+    if mid == -1:
         raise ValueError(f"No valid split for interval ({start}, {end})")
 
     # (start, end) is the base edge of this subproblem.
@@ -103,6 +134,10 @@ def _backtrack(
     diagonals.extend(right_diagonals)
 
     return triangles, diagonals
+
+
+def _is_edge(start, end, n):
+    return abs(start - end) == 1 or (start == 0 and end == n - 1)
 
 
 __all__ = ["optimal_triangulation"]
