@@ -4,7 +4,7 @@ Runs triangulation analysis on a test suite of polygons.
 Outputs:
     raw.csv                — metrics for each polygon, each algorithm
     comparison.csv         — mean ± std of normalized metrics for each algorithm
-    comparison_by_type.csv — mean ± std of normalized metrics for each algorithm, broken down by polygon type
+    comparison_by_type.csv — mean ± std of normalized metrics for each algorithm by polygon type
     time.csv               — runtime vs n for random polygons (ear clipping + optimal sum)
 
 Usage:
@@ -124,9 +124,7 @@ def main():
 
     # --- 2. comparison.csv ---
     agg_dict = {
-        f"{metric}_{stat}": (metric, stat)
-        for metric in NORM_METRICS
-        for stat in ["mean", "std"]
+        f"{metric}_{stat}": (metric, stat) for metric in NORM_METRICS for stat in ["mean", "std"]
     }
     comparison = df.groupby("algo", as_index=False).agg(**agg_dict)
     comparison.to_csv(args.output_dir / "comparison.csv", index=False)
@@ -137,15 +135,12 @@ def main():
 
     # --- 4. time.csv — random polygons only, ear clipping + optimal sum ---
     time_df = df[(df.polygon_type == "random") & df.algo.isin(TIME_ALGOS)]
-    agg_dict = {
-        f"time_{stat}": ("time", stat)
-        for stat in ["mean", "std"]
-    }
+    agg_dict = {f"time_{stat}": ("time", stat) for stat in ["mean", "std"]}
     time_df = time_df.groupby(["algo", "n"], as_index=False).agg(**agg_dict)
     time_df.to_csv(args.output_dir / "time.csv", index=False)
 
     print(f"\nResults written to {args.output_dir}/")
-    print(f"  raw.csv, comparison.csv, comparison_by_type.csv, time.csv")
+    print("  raw.csv, comparison.csv, comparison_by_type.csv, time.csv")
 
 
 if __name__ == "__main__":
