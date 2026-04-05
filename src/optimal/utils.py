@@ -1,4 +1,4 @@
-from ..models import Point, PolygonVertex
+from ..models import PolygonVertex
 from ..utils.geometry import check_valid_diagonal
 
 
@@ -20,9 +20,4 @@ def check_if_valid_split(vstart: PolygonVertex, vmid: PolygonVertex, vend: Polyg
     return True
 
 
-def distance(p1: Point, p2: Point) -> float:
-    """Returns the euclidean distance between two points"""
-    return ((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2) ** 0.5
-
-
-__all__ = ["check_if_valid_split", "distance"]
+__all__ = ["check_if_valid_split"]

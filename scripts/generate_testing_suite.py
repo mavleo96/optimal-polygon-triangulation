@@ -13,10 +13,7 @@ Notes:
     - A fixed random seed is used for reproducibility.
 
 Output structure:
-    <output-dir>/
-        random_polygon/       polygon_<n>_<i>.txt
-        star_shaped_polygon/  polygon_<n>_<i>.txt
-        convex_polygon/       polygon_<n>_<i>.txt
+    <output-dir>/<polygon-type>_polygon_<n>_<i>.txt
 
 File format (one vertex per line, clockwise order):
     x1 y1
@@ -79,14 +76,13 @@ def main():
         )
 
     polygon_types = {
-        "random_polygon": random_polygon,
-        "star_shaped_polygon": random_star_shaped_polygon,
-        "convex_polygon": random_convex_polygon,
+        "random": random_polygon,
+        "star_shaped": random_star_shaped_polygon,
+        "convex": random_convex_polygon,
     }
 
-    # Create output directories
-    for type_name in polygon_types.keys():
-        (args.output_dir / type_name).mkdir(parents=True, exist_ok=True)
+    # Create output directory
+    args.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Generate testing suite
     for num_points in range(args.min_points, args.max_points + 1, STEP_SIZE):
@@ -105,7 +101,7 @@ def main():
                         continue
 
                 with open(
-                    args.output_dir / type_name / f"polygon_{num_points}_{i:04d}.txt", "w"
+                    args.output_dir / f"{type_name}_polygon_{num_points}_{i:04d}.txt", "w"
                 ) as f:
                     f.write("\n".join(f"{x} {y}" for x, y in polygon))
 

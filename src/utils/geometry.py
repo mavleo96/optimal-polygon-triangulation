@@ -147,6 +147,11 @@ def check_valid_diagonal(v1: PolygonVertex, v2: PolygonVertex) -> bool:
     return True
 
 
+def distance(p1: Point, p2: Point) -> float:
+    """Returns the euclidean distance between two points"""
+    return ((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2) ** 0.5
+
+
 def _cross_product(p: Point, q: Point, r: Point) -> float:
     """Returns the cross product of the vectors pq and pr"""
     return (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)
