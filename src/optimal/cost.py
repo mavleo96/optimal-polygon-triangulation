@@ -55,9 +55,9 @@ def min_length_cost(
 
 
 COST_FUNC_MAP = {
-    "sum": sum_length_cost,
-    "max": max_length_cost,
-    "min": min_length_cost,
+    "minsum": sum_length_cost,
+    "minimax": max_length_cost,
+    "maximin": min_length_cost,
 }
 
 __all__ = ["COST_FUNC_MAP", "CostFn"]

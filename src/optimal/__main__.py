@@ -14,7 +14,7 @@ def main():
         "--criteria",
         type=str,
         help="Criteria to use for the triangulation",
-        choices=["min", "max", "sum"],
+        choices=["minsum", "minimax", "maximin"],
     )
     parser.add_argument("--validate", action="store_true", help="Validate the triangulation")
     args = parser.parse_args()

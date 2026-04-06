@@ -32,12 +32,12 @@ from src.utils.validation import validate_polygon_input, validate_triangulation
 
 ALGOS = {
     "ear_clipping": ear_clipping_triangulation,
-    "optimal_sum": partial(optimal_triangulation, criteria="sum"),
-    "optimal_max": partial(optimal_triangulation, criteria="max"),
-    "optimal_min": partial(optimal_triangulation, criteria="min"),
+    "optimal_minsum": partial(optimal_triangulation, criteria="minsum"),
+    "optimal_minimax": partial(optimal_triangulation, criteria="minimax"),
+    "optimal_maximin": partial(optimal_triangulation, criteria="maximin"),
 }
 NORM_METRICS = ["norm_dlength", "norm_max_dlength", "norm_min_dlength"]
-TIME_ALGOS = ["ear_clipping", "optimal_sum"]
+TIME_ALGOS = ["ear_clipping", "optimal_minsum"]
 
 
 def _compute_metrics(polygon: Polygon, diagonals: list[tuple[int, int]]) -> dict:
@@ -48,11 +48,17 @@ def _compute_metrics(polygon: Polygon, diagonals: list[tuple[int, int]]) -> dict
     total_edge_length = sum(edge_lengths)
     mean_edge_length = total_edge_length / n
 
-    diagonal_lengths = [distance(vertices[i].p, vertices[j].p) for i, j in diagonals]
-    total_diagonal_length = sum(diagonal_lengths)
-    mean_diagonal_length = total_diagonal_length / (n - 3)
-    max_diagonal_length = max(diagonal_lengths)
-    min_diagonal_length = min(diagonal_lengths)
+    if n > 3:
+        diagonal_lengths = [distance(vertices[i].p, vertices[j].p) for i, j in diagonals]
+        total_diagonal_length = sum(diagonal_lengths)
+        mean_diagonal_length = total_diagonal_length / (n - 3)
+        max_diagonal_length = max(diagonal_lengths)
+        min_diagonal_length = min(diagonal_lengths)
+    else:
+        total_diagonal_length = 0
+        mean_diagonal_length = None
+        max_diagonal_length = None
+        min_diagonal_length = None
 
     return {
         "total_elength": total_edge_length,
@@ -119,10 +125,10 @@ def main():
 
     df = pd.DataFrame(rows)
 
-    # --- 1. raw.csv ---
+    # --- 1. raw.csv ------------------
     df.to_csv(args.output_dir / "raw.csv", index=False)
 
-    # --- 2. comparison.csv ---
+    # --- 2. comparison.csv -----------
     agg_dict = {
         f"{metric}_{stat}": (metric, stat) for metric in NORM_METRICS for stat in ["mean", "std"]
     }
@@ -133,10 +139,10 @@ def main():
     comparison_by_type = df.groupby(["polygon_type", "algo"], as_index=False).agg(**agg_dict)
     comparison_by_type.to_csv(args.output_dir / "comparison_by_type.csv", index=False)
 
-    # --- 4. time.csv — random polygons only, ear clipping + optimal sum ---
+    # --- 4. time.csv —----------------
     time_df = df[(df.polygon_type == "random") & df.algo.isin(TIME_ALGOS)]
-    agg_dict = {f"time_{stat}": ("time", stat) for stat in ["mean", "std"]}
-    time_df = time_df.groupby(["algo", "n"], as_index=False).agg(**agg_dict)
+    time_agg_dict = {f"time_{stat}": ("time", stat) for stat in ["mean", "std"]}
+    time_df = time_df.groupby(["algo", "n"], as_index=False).agg(**time_agg_dict)
     time_df.to_csv(args.output_dir / "time.csv", index=False)
 
     print(f"\nResults written to {args.output_dir}/")

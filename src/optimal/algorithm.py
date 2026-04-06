@@ -14,9 +14,9 @@ def optimal_triangulation(
     Optimal triangulation of a simple polygon using interval dynamic programming.
 
     Optimality is defined by the given criteria:
-        - "sum": minimize the total length of all diagonals
-        - "max": minimize the length of the longest diagonal
-        - "min": maximize the length of the shortest diagonal
+        - "minsum": minimize the total length of all diagonals
+        - "minimax": minimize the length of the longest diagonal
+        - "maximin": maximize the length of the shortest diagonal
 
     Time complexity:  O(n³)
     Space complexity: O(n²)
