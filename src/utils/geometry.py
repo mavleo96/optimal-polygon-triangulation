@@ -14,13 +14,12 @@ def check_orientation(p: Point, q: Point, r: Point) -> int:
     Returns:
         Returns 1 if left turn, -1 if right turn, 0 if collinear.
     """
+    assert p != q, "p and q cannot be the same point"
+
     cp = _cross_product(p, q, r)
     if abs(cp) < TOL:
         return 0
-    elif cp > 0:
-        return 1
-    else:
-        return -1
+    return 1 if cp > 0 else -1
 
 
 def check_intersection(p1: Point, p2: Point, q1: Point, q2: Point) -> bool:
@@ -165,4 +164,4 @@ def _on_segment(p: Point, q: Point, r: Point) -> bool:
     )
 
 
-__all__ = ["check_orientation", "check_intersection", "check_valid_diagonal"]
+__all__ = ["check_orientation", "check_intersection", "check_valid_diagonal", "distance"]
