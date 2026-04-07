@@ -96,3 +96,22 @@ python scripts/run_analysis.py \
 | `comparison.csv`         | Mean ± std per algorithm across all polygon types              |
 | `comparison_by_type.csv` | Mean ± std per algorithm and polygon type                      |
 | `time.csv`               | Runtime vs *n* for random polygons (ear clipping and `minsum`) |
+
+---
+
+## Interactive App
+ 
+```bash
+python app.py
+```
+ 
+Opens a Gradio web app at `http://localhost:7860` with three tabs:
+ 
+| Tab                 | Description                                                                                    |
+|---------------------|------------------------------------------------------------------------------------------------|
+| **1 Build Polygon** | Click to place vertices on a canvas, or upload a `.txt` file                                   |
+| **2 DP Animation**  | Step through the interval DP fill and backtracking phase with a live polygon view and DP table |
+| **3 Comparison**    | Run all four algorithms side by side and compare diagonal metrics in a summary table           |
+ 
+The app requires the polygon to be finished (via the **Finish** button) before running the animation or comparison.
+ 

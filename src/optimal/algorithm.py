@@ -3,13 +3,14 @@ import math
 from ..models import Diagonal, Polygon, PolygonVertex, Triangle
 from ..utils.geometry import check_valid_diagonal, distance
 from .cost import COST_FUNC_MAP, CostFn
+from .tracer import _Tracer
 
 _Cache = list[list[float | None]]
 
 
 def optimal_triangulation(
-    polygon: Polygon, criteria: str, return_cache: bool = False
-) -> tuple[list[Triangle], list[Diagonal]] | tuple[list[Triangle], list[Diagonal], _Cache, _Cache]:
+    polygon: Polygon, criteria: str, return_trace: bool = False
+) -> tuple[list[Triangle], list[Diagonal]] | tuple[tuple[list[Triangle], list[Diagonal]], _Tracer]:
     """
     Optimal triangulation of a simple polygon using interval dynamic programming.
 
@@ -24,18 +25,26 @@ def optimal_triangulation(
     Args:
         polygon:      Polygon to triangulate.
         criteria:     Optimality criterion.
-        return_cache: If True, also returns the DP cache tables.
+        return_trace: If True, also returns the tracer with execution trace and caches.
 
     Returns:
-        (triangles, diagonals) if return_cache is False.
-        (triangles, diagonals, (splits_cache, costs_cache)) if return_cache is True.
+        (triangles, diagonals) if return_trace is False.
+        ((triangles, diagonals), tracer) if return_trace is True.
 
-        triangles: n-2 triangles as (i, j, k) index triples.
-        diagonals: n-3 diagonals as (i, j) index pairs, excluding polygon edges.
-        splits_cache: n×n array where splits_cache[i][j] is the optimal split vertex
-                      for subproblem (i, j).
-        costs_cache:  n×n array where costs_cache[i][j] is the optimal cost
-                      for subproblem (i, j).
+        triangles:         n-2 triangles as (i, j, k) index triples.
+        diagonals:         n-3 diagonals as (i, j) index pairs, excluding polygon edges.
+        tracer.events:     Ordered list of trace events recording the full DP execution.
+                           Each event is a dict with keys:
+                             'event'  : str  — one of 'enter', 'exit', 'cache_hit',
+                                               'base_case', 'invalid', 'try_mid'
+                             'start'  : int  — subproblem start vertex
+                             'end'    : int  — subproblem end vertex
+                             'stack'  : list[tuple[int,int]]  — active call stack snapshot
+                           Additional keys per event type:
+                             'try_mid' : 'mid', 'left_cost', 'right_cost', 'cost'
+                             'exit'    : 'best_mid', 'best_cost'
+        tracer.splits_cache: n×n array — optimal split vertex for each subproblem.
+        tracer.costs_cache:  n×n array — optimal cost for each subproblem.
     """
     assert len(polygon) >= 3, "Polygon must have at least 3 vertices"
     assert criteria in COST_FUNC_MAP, "Invalid criteria"
@@ -47,13 +56,19 @@ def optimal_triangulation(
     costs_cache = [[None] * n for _ in range(n)]
     splits_cache = [[None] * n for _ in range(n)]
 
-    # Compute the optimal triangulation
-    _dp(0, n - 1, polygon.vertices, splits_cache, costs_cache, cost_fn)
+    tracer: _Tracer | None = _Tracer() if return_trace else None
 
-    if return_cache:
-        return _backtrack(0, n - 1, polygon.vertices, splits_cache), (splits_cache, costs_cache)
+    # Compute the optimal triangulation
+    _dp(0, n - 1, polygon.vertices, splits_cache, costs_cache, cost_fn, tracer)
+
+    result = _backtrack(0, n - 1, polygon.vertices, splits_cache)
+
+    if return_trace:
+        tracer.splits_cache = splits_cache
+        tracer.costs_cache = costs_cache
+        return result, tracer
     else:
-        return _backtrack(0, n - 1, polygon.vertices, splits_cache)
+        return result
 
 
 def _dp(
@@ -63,6 +78,7 @@ def _dp(
     splits_cache: _Cache,
     costs_cache: _Cache,
     cost_fn: CostFn,
+    _tracer: _Tracer | None = None,
 ) -> float | None:
     """
     Recursive memoized DP over polygon sub-arcs.
@@ -94,12 +110,15 @@ def _dp(
         splits_cache: n×n memoization table for optimal split vertices.
         costs_cache:  n×n memoization table for optimal costs.
         cost_fn:      Cost function defining the optimality criterion.
+        _tracer:      Optional trace recorder.
 
     Returns:
         cost: Optimal cost for this subproblem, or None if (start, end) is a polygon edge.
     """
     # Return cached result if available
     if splits_cache[start][end] is not None:
+        if _tracer:
+            _tracer.record("cache_hit", start, end)
         return costs_cache[start][end]
 
     # Get the start and end vertices
@@ -109,6 +128,8 @@ def _dp(
 
     # Base case: subproblem is a polygon edge
     if vstart.next == vend:
+        if _tracer:
+            _tracer.record("base_case", start, end)
         # Note: special cost None for edges
         splits_cache[start][end] = -1
         costs_cache[start][end] = None
@@ -117,9 +138,16 @@ def _dp(
     # Early exit: (start, end) is not a polygon edge and not a valid diagonal —
     # this subproblem cannot be triangulated from the parent's context.
     if not _is_edge(start, end, n) and not check_valid_diagonal(vstart, vend):
+        if _tracer:
+            _tracer.record("invalid", start, end)
         splits_cache[start][end] = -1
         costs_cache[start][end] = math.inf
         return math.inf
+
+    # Record 'enter' and push to call stack
+    if _tracer:
+        _tracer.push(start, end)
+        _tracer.record("enter", start, end)
 
     # Temporarily restrict the linked list to the sub-arc [start, end].
     # This makes check_valid_diagonal in child calls traverse only sub-arc edges
@@ -143,10 +171,21 @@ def _dp(
     for i in range(cand_length):
         mid = (start + i + 1) % n
 
-        left_subcost = _dp(start, mid, vertices, splits_cache, costs_cache, cost_fn)
-        right_subcost = _dp(mid, end, vertices, splits_cache, costs_cache, cost_fn)
+        left_subcost = _dp(start, mid, vertices, splits_cache, costs_cache, cost_fn, _tracer)
+        right_subcost = _dp(mid, end, vertices, splits_cache, costs_cache, cost_fn, _tracer)
 
         cost = cost_fn(base_cost, left_subcost, right_subcost)
+
+        if _tracer:
+            _tracer.record(
+                "try_mid",
+                start,
+                end,
+                mid=mid,
+                left_cost=left_subcost,
+                right_cost=right_subcost,
+                cost=cost,
+            )
 
         if cost is not None and cost < best_cost:
             best_cost = cost
@@ -158,6 +197,11 @@ def _dp(
     # Restore the linked list to its original state
     vstart.prev = start_prev
     vend.next = end_next
+
+    # Record 'exit' and pop from call stack
+    if _tracer:
+        _tracer.record("exit", start, end, best_mid=best_mid, best_cost=best_cost)
+        _tracer.pop()
 
     return best_cost
 

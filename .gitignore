@@ -218,8 +218,7 @@ __marimo__/
 # Mac
 **/.DS_Store
 
-# Testing suite
+# Ignored directories
 testing_suite/
-
-# Results
 results/
+notebooks/

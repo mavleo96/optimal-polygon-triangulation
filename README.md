@@ -1,7 +1,7 @@
 # Optimal Polygon Triangulation via Dynamic Programming
 
-Computes optimal triangulations of simple polygons using interval dynamic programming under
-three geometric criteria, with experimental comparison against the ear clipping baseline.
+Computes optimal triangulations of simple polygons using interval dynamic programming, with
+experimental comparison against the ear clipping baseline.
 
 ---
 
@@ -9,7 +9,7 @@ three geometric criteria, with experimental comparison against the ear clipping 
 
 A triangulation of an $n$-vertex simple polygon partitions it into $n-2$ triangles using
 exactly $n-3$ non-crossing internal diagonals. Since every valid triangulation uses the same
-number of diagonals, algorithms differ only in *which* diagonals are chosen.
+number of diagonals, algorithms differ only in which diagonals are chosen.
 
 ---
 
@@ -48,7 +48,7 @@ Full pseudocode is in [`PSEUDOCODE.md`](PSEUDOCODE.md).
 
 Metrics are normalized by the mean polygon edge length $\bar{e}$. Results are mean $\pm$ std
 over the full test suite (convex, star-shaped, and random simple polygons, $n = 5$ to $100$,
-20 instances per size). Ear clipping is included as an unoptimised baseline.
+in steps of 5, with 20 instances per size). Ear clipping is included as a baseline.
 
 | Algorithm         | $\bar{d}/\bar{e}$ | $d_{\max}/\bar{e}$ | $d_{\min}/\bar{e}$ |
 |-------------------|:-----------------:|:------------------:|:------------------:|
@@ -72,17 +72,38 @@ of a larger mean. Detailed breakdown by polygon type is in `results/comparison_b
 ## Repository Structure
 
 ```
-src/
-  ear_clipping/     Ear clipping baseline (O'Rourke 1994)
-  optimal/          DP triangulation — algorithm and cost functions
-  models/           Point, Polygon, PolygonVertex
-  utils/            Geometry primitives, I/O, validation, visualization
-scripts/
-  generate_testing_suite.py
-  run_analysis.py
-results/            Generated CSV outputs
-PSEUDOCODE.md       Full algorithm pseudocode
-USAGE.md            Setup and usage instructions
+.
+├── src
+│   ├── ear_clipping
+│   │   ├── __init__.py
+│   │   ├── __main__.py        # CLI entry point
+│   │   └── algorithm.py       # Ear clipping triangulation (O'Rourke)
+│   ├── optimal
+│   │   ├── __init__.py
+│   │   ├── __main__.py        # CLI entry point
+│   │   ├── algorithm.py       # Interval DP triangulation
+│   │   ├── cost.py            # Cost functions (minsum, minimax, maximin)
+│   │   └── tracer.py          # Optional DP execution tracer
+│   ├── models
+│   │   ├── __init__.py
+│   │   ├── point.py           # Point
+│   │   └── polygon.py         # Polygon, PolygonVertex
+│   └── utils
+│       ├── __init__.py
+│       ├── geometry.py        # Orientation, intersection, diagonal validity
+│       ├── io.py              # Polygon file reader
+│       ├── validation.py      # Input and triangulation validation
+│       └── visualization.py   # Matplotlib polygon visualizer
+├── scripts
+│   ├── generate_testing_suite.py
+│   └── run_analysis.py
+├── assets/
+├── sample_input/
+├── app.py                     # Gradio interactive app
+├── pyproject.toml
+├── PSEUDOCODE.md
+├── README.md
+└── USAGE.md
 ```
 
 ---
