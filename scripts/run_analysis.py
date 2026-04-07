@@ -67,17 +67,16 @@ def _compute_metrics(polygon: Polygon, diagonals: list[tuple[int, int]]) -> dict
         "mean_dlength": mean_diagonal_length,
         "max_dlength": max_diagonal_length,
         "min_dlength": min_diagonal_length,
-        "norm_dlength": mean_diagonal_length / mean_edge_length,
-        "norm_max_dlength": max_diagonal_length / mean_edge_length,
-        "norm_min_dlength": min_diagonal_length / mean_edge_length,
+        "norm_dlength": mean_diagonal_length / mean_edge_length
+        if mean_diagonal_length is not None
+        else None,
+        "norm_max_dlength": max_diagonal_length / mean_edge_length
+        if max_diagonal_length is not None
+        else None,
+        "norm_min_dlength": min_diagonal_length / mean_edge_length
+        if min_diagonal_length is not None
+        else None,
     }
-
-
-def _agg(series: pd.Series, stat: str) -> float | None:
-    """Safely aggregates a series — returns None if column missing or all NaN."""
-    if series is None or series.dropna().empty:
-        return None
-    return getattr(series, stat)()
 
 
 def main():

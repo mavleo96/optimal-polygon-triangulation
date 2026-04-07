@@ -1,3 +1,19 @@
+[project]
+name = "optimal-triangulation"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "adjustText==1.3.0",
+    "gradio==6.11.0",
+    "matplotlib==3.10.8",
+    "pandas==3.0.2",
+    "pillow==12.2.0",
+    "plotly==6.6.0",
+    "polygenerator==0.2.0",
+    "ruff==0.15.9",
+    "tqdm==4.67.3",
+]
+
 [tool.ruff]
 exclude = [
     "notebooks",

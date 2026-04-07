@@ -215,6 +215,9 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Mac
+**/.DS_Store
+
 # Testing suite
 testing_suite/
 
