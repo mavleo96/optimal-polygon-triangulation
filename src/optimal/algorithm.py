@@ -162,9 +162,9 @@ def _dp(
     best_mid = -1
 
     # Get the base cost
-    # Note: base_cost is None if (start, end) is a polygon edge
+    # Note: diagonal_len is None if (start, end) is a polygon edge
     #       polygon edges are excluded from all cost criteria.
-    base_cost = distance(vstart.p, vend.p) if not _is_edge(start, end, n) else None
+    diagonal_len = distance(vstart.p, vend.p) if not _is_edge(start, end, n) else None
 
     # Note: candidates in range (start, end) exclusive
     cand_length = (end - start - 1) if end > start else (n - start + end - 1)
@@ -174,7 +174,7 @@ def _dp(
         left_subcost = _dp(start, mid, vertices, splits_cache, costs_cache, cost_fn, _tracer)
         right_subcost = _dp(mid, end, vertices, splits_cache, costs_cache, cost_fn, _tracer)
 
-        cost = cost_fn(base_cost, left_subcost, right_subcost)
+        cost = cost_fn(diagonal_len, left_subcost, right_subcost)
 
         if _tracer:
             _tracer.record(
