@@ -33,13 +33,6 @@ Three cost functions $w$ are supported:
 | `minimax` | Minimize $\max_d \|d\|$        |
 | `maximin` | Maximize $\min_d \|d\|$        |
 
-### Chain-Breaking Optimisation
-
-When processing sub-arc $(i, j)$, the polygon linked list is temporarily broken at the verified
-diagonal $v_i v_j$. Child calls to `check_valid_diagonal` then traverse only the sub-arc
-($O(k)$ edges) rather than the full polygon ($O(n)$ edges). This does not change the asymptotic
-bound but gives a substantial practical speedup for non-convex polygons.
-
 Full pseudocode is in [`PSEUDOCODE.md`](PSEUDOCODE.md).
 
 ---

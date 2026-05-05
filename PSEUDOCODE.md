@@ -20,7 +20,7 @@ Function DP(a, b)
         cost[a][b] ← ∞
         return ∞
 
-    restrict polygon chain to arc [a, b]      // enables O(b - a) child checks
+    restrict polygon to boundary chain [a, b]      // enables O(b - a) child checks
     best_cost ← ∞
     best_split ← -1
 

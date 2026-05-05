@@ -81,17 +81,17 @@ def _dp(
     _tracer: _Tracer | None = None,
 ) -> float | None:
     """
-    Recursive memoized DP over polygon sub-arcs.
+    Recursive memoized DP over polygon sub-chains.
 
     Computes the optimal cost to triangulate the sub-polygon defined by the
-    clockwise arc from vertices[start] to vertices[end], where (start, end)
+    clockwise boundary chain from vertices[start] to vertices[end], where (start, end)
     is either a polygon edge or a previously verified valid diagonal.
 
-    To restrict diagonal validity checks to the current sub-arc (O(k) instead
+    To restrict diagonal validity checks to the current sub-chain (O(k) instead
     of O(n)), the linked list is temporarily modified: vend.next is set to
     vstart and vstart.prev is set to vend, making them adjacent. This is safe
     because (start, end) has already been verified as a valid diagonal, so
-    the polygon can be cleanly split at this chord. Pointers are restored
+    the polygon can be cleanly split at this diagonal. Pointers are restored
     before returning.
 
     Cache sentinel values:
@@ -104,8 +104,8 @@ def _dp(
         costs_cache[i][j] = float     → optimal cost
 
     Args:
-        start:        Start vertex index of the sub-arc.
-        end:          End vertex index of the sub-arc.
+        start:        Start vertex index of the sub-chain.
+        end:          End vertex index of the sub-chain.
         vertices:     Full polygon vertex list.
         splits_cache: n×n memoization table for optimal split vertices.
         costs_cache:  n×n memoization table for optimal costs.
@@ -149,8 +149,8 @@ def _dp(
         _tracer.push(start, end)
         _tracer.record("enter", start, end)
 
-    # Temporarily restrict the linked list to the sub-arc [start, end].
-    # This makes check_valid_diagonal in child calls traverse only sub-arc edges
+    # Temporarily restrict the linked list to the sub-chain [start, end].
+    # This makes check_valid_diagonal in child calls traverse only sub-chain edges
     # (O(k)) rather than the full polygon (O(n)).
     start_prev = vstart.prev
     end_next = vend.next
@@ -214,12 +214,12 @@ def _backtrack(
 
     Each call owns exactly one triangle (start, mid, end) and one diagonal
     (start, end) if it is not a polygon edge. Child calls recursively add their
-    own triangles and diagonals for the left sub-arc (start, mid) and right
-    sub-arc (mid, end).
+    own triangles and diagonals for the left sub-chain (start, mid) and right
+    sub-chain (mid, end).
 
     Args:
-        start:    Start vertex index of the sub-arc.
-        end:      End vertex index of the sub-arc.
+        start:    Start vertex index of the sub-chain.
+        end:      End vertex index of the sub-chain.
         vertices: Full polygon vertex list.
         cache:    splits_cache table from _dp.
 
